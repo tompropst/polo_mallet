@@ -25,6 +25,9 @@ nutWidth = 8.6; // polygons this small come out poorly in ABS
 nutDepth = 4;
 // Options:
 traction = 1; // Add traction to the bottom = 1, no traction = 0
+tractionDepth = 2;
+outerRadius = bendRadius + radius; // Arch to follow for traction on elbow
+elbowLength = 2*outerRadius*PI*bendAngle/360;
 
 /*****
 * The following 2 modules for creating an elbow came from:
@@ -35,7 +38,7 @@ traction = 1; // Add traction to the bottom = 1, no traction = 0
 // The intersection defines the length of the elbow.
 module pie_slice(radius, angle, step) {
   for(theta = [0:step:angle-step]) {
-    rotate([0,0,0]) linear_extrude(height = radius*2, center=true)
+    linear_extrude(height = radius*2, center=true)
       polygon( points = [[0,0],
                [radius * cos(theta+step) ,radius * sin(theta+step)],
                [radius*cos(theta),radius*sin(theta)]]
@@ -110,12 +113,18 @@ difference() {
     cylinder(h=boltHeadDia/2, r1=boltHeadDia/2, r2=0);
   };
 
-  // Traction
+  // Traction (fixed 1mm between grooves)
   if(traction) {
-    for(scales = [-50:5:straightLength]) {
+    for(scales = [0:2*tractionDepth+1:straightLength]) {
       translate([radius,scales,-face]) {
-        cylinder(h=2*radius, r=2);
+        cylinder(h=2*radius, r=tractionDepth);
       };
+    };
+    for(scales = [0:2*tractionDepth+1:elbowLength]) {
+      translate([outerRadius*cos(scales/outerRadius*180/PI)-bendRadius,
+                 -outerRadius*sin(scales/outerRadius*180/PI),
+                 -face])
+        cylinder(h=2*radius, r=tractionDepth);
     };
   };
 

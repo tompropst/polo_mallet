@@ -4,7 +4,7 @@
 * Rev   : A
 *******************************************************************************/
 
-$fn = 24;
+$fn = 24*4;
 
 radius = 25;
 straightLength = 55;
@@ -26,12 +26,13 @@ nutDepth = 4;
 // Options:
 traction = 1; // Add traction to the bottom = 1, no traction = 0
 
-echo(boltY);
 /*****
 * The following 2 modules for creating an elbow came from:
 * http://www.thingiverse.com/thing:34027/#instructions
 *****/
 
+// This module creates a pie slice that is later intersected with a toroid.
+// The intersection defines the length of the elbow.
 module pie_slice(radius, angle, step) {
   for(theta = [0:step:angle-step]) {
     rotate([0,0,0]) linear_extrude(height = radius*2, center=true)
@@ -42,6 +43,11 @@ module pie_slice(radius, angle, step) {
   };
 };
 
+// This module creates the toroid and intersects it with a pie slice to 
+// define the elbow length (in degrees).
+// 'convexity' is a pretty obscure parameter as described at:
+// http://en.wikibooks.org/wiki/OpenSCAD_User_Manual/2D_to_3D_Extrusion#Description_of_extrude_parameters
+// The 'children' object is the fundamental shape to operate on (e.g. circle).
 module partial_rotate_extrude(angle, radius, convex) {
   intersection () {
     rotate_extrude(convexity=convex) translate([radius,0,0]) children(0);
@@ -104,12 +110,15 @@ difference() {
     cylinder(h=boltHeadDia/2, r1=boltHeadDia/2, r2=0);
   };
 
-  // Scales
-  for(scales = [-50:5:straightLength]) {
-    translate([radius,scales,-face]) {
-      cylinder(h=2*radius, r=2);
+  // Traction
+  if(traction) {
+    for(scales = [-50:5:straightLength]) {
+      translate([radius,scales,-face]) {
+        cylinder(h=2*radius, r=2);
+      };
     };
   };
+
 };
 
 
